@@ -8,6 +8,7 @@ namespace FireScript
     public class FireScript : BaseScript
     {
         private const int ManageFireTimeout = 50;
+        private const int FireDelay = 10;
         private List<Fire> ActiveFires = new List<Fire>();
         private List<Tuple<CoordinateParticleEffect, Vector3>> SmokeWithoutFire = new List<Tuple<CoordinateParticleEffect, Vector3>>();
         public FireScript()
@@ -23,7 +24,7 @@ namespace FireScript
                 new { name = "Scale", help = "Magnitude of the smoke (recommended 0.5-5.0)" }
             });
             EventHandlers["FireScript:StartFireAtPlayer"] += new Action<int,int, int, bool>((int source, int maxFlames, int maxRange, bool explosion) =>
-            {               
+            {
                 startFire(source, maxFlames, maxRange, explosion);
             });
             EventHandlers["FireScript:StopFiresAtPlayer"] += new Action<int>((int source) =>
@@ -59,10 +60,12 @@ namespace FireScript
         private async void Main()
         {
             DateTime timekeeper = DateTime.Now;
+
             while (true)
             {
                 await Delay(10);
-                if ((System.DateTime.Now - timekeeper).TotalMilliseconds > ManageFireTimeout)
+
+                    if ((System.DateTime.Now - timekeeper).TotalMilliseconds > ManageFireTimeout)
                 {
                     timekeeper = DateTime.Now;
                     foreach (Fire f in ActiveFires.ToArray())
@@ -72,9 +75,16 @@ namespace FireScript
                         {
                             f.Manage();
                         }
-                        else
+                        else if (f.FireIsOver)
                         {
                             ActiveFires.Remove(f);
+                        }
+                        else
+                        {
+                            if (f.flameDelay <= DateTime.Now && f.FireHaveStarted == false)
+                            {
+                                await f.Start();
+                            }
                         }
                     }
                 }
@@ -99,9 +109,10 @@ namespace FireScript
             Pos.Z -= 0.87f;
             if (maxRange > 30) { maxRange = 30; }
             if (maxFlames > 100) { maxRange = 100; }
-            Fire f = new Fire(Pos, maxFlames, false, maxRange, explosion);
+            DateTime flameDelay = DateTime.Now.AddSeconds(FireDelay); // Added fire start delay, people where complaining about been set on fire ☺
+            Fire f = new Fire(Pos, maxFlames, false, maxRange, explosion, flameDelay, false);
             ActiveFires.Add(f);
-            f.Start();
+            //           f.Start();  //Moved to 'void Main()'
         }
 
         private async Task startSmoke(Vector3 pos, float scale)

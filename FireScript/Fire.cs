@@ -22,21 +22,28 @@ namespace FireScript
         public CoordinateParticleEffect SmokePTFX;
         public CoordinateParticleEffect InteriorSmokePTFX;
         public bool Active { get; private set; }
+        public bool FireIsOver { get; private set; }
+        public bool FireHaveStarted { get; private set; }
+        public DateTime flameDelay;
 
         public Fire() { }
 
-        public Fire(Vector3 Position, int MaxFlames, bool Explosion, int MaxSpreadDistance, bool explosion)
+        public Fire(Vector3 Position, int MaxFlames, bool Explosion, int MaxSpreadDistance, bool explosion, DateTime flameDelay, bool FireHaveStarted)
         {
             this.Position = Position;
             this.MaxFlames = MaxFlames;
             this.MaxSpreadDistance = MaxSpreadDistance;
             this.Explosion = explosion;
+            this.flameDelay = flameDelay;
+            this.FireHaveStarted = false;
         }
 
         public async Task Start()
         {
             Active = true;
+            FireHaveStarted = true;
             for (int i = 0; i < MaxFlames; i++)
+            
             {
                 Flames.Add(new Flame(Position.Around(0, MaxSpreadDistance)));
             }
@@ -76,6 +83,7 @@ namespace FireScript
                 TriggerServerEvent("FireScript:FirePutOut", Position.X, Position.Y, Position.Z);
             }
             Active = false;
+            FireIsOver = true;
 
             //FireScript.WriteDebug("Removed fire!");
         }
